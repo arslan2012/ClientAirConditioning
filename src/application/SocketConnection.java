@@ -5,19 +5,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 
-public class SocketConnection implements Subject{
+public class SocketConnection{
 	private Socket socket;
 	private Scanner in;
 	private PrintWriter out;
-	private final ArrayList<Observer> observers;
-	
-	public SocketConnection(){
-		observers = new ArrayList<Observer>();
-	}
 	
 	public boolean createConnection() {
 		try {
@@ -88,7 +82,7 @@ public class SocketConnection implements Subject{
 	
 	public boolean sendCurTemperature(double temperature) {
 		try {
-			out.println("5 "
+			out.println("9 "
 					+ Double.toString(temperature) + " ");
 		}
 		catch (Exception e) {
@@ -112,7 +106,6 @@ public class SocketConnection implements Subject{
 					client.setMode(Mode.COOL);
 				else
 					client.setMode(Mode.HEAT);
-				this.notifyObservers(client);
 				break;
 				
 			/*调节温度请求回应*/
@@ -123,13 +116,11 @@ public class SocketConnection implements Subject{
 					client.setState(State.WAITING);
 				else
 					client.setState(State.STANDBY);
-				this.notifyObservers(client);
 				break;
 				
 			/*主机送送风信息*/
 			case 6:
 				client.setState(State.RUNNING);
-				this.notifyObservers(client);
 				break;
 				
 			/*主机送停风信息*/
@@ -137,9 +128,8 @@ public class SocketConnection implements Subject{
 				in.hasNext();
 				int preemption = in.nextInt();//待修改
 				if (preemption==0)
-				client.setState(State.STANDBY);
-				else client.setState(State.WAITING);
-				this.notifyObservers(client);
+				client.setState(State.WAITING);
+				else client.setState(State.STANDBY);
 				break;
 				
 			/*请求获取温度*/
@@ -156,7 +146,6 @@ public class SocketConnection implements Subject{
 				
 				client.setConsumption(consumption + client.getConsumption());
 				client.setFee(fee + client.getFee());
-				this.notifyObservers(client);
 				break;
 			default:
 				break;
@@ -174,24 +163,5 @@ public class SocketConnection implements Subject{
 		}
 		return true;
 	}
-
-
-    public void registerObserver(Observer observer)
-    {
-        observers.add(observer);
-    }
-
-    public void removeObserver(Observer observer)
-    {
-        observers.remove(observer);
-    }
-
-    public void notifyObservers(Client client)
-    {
-        for (Observer o :observers)
-        {
-            o.update(client);
-        }
-    }
 	
 }
