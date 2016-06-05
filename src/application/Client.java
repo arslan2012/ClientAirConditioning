@@ -1,10 +1,9 @@
 package application;
 
-import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-public class Client implements Subject {
+public class Client{
 	private int roomNumber;
 	private Mode mode;
 	private State state;
@@ -13,19 +12,17 @@ public class Client implements Subject {
 	private Wind wind;
 	private double fee;
 	private double consumption;
-	private final ArrayList<Observer> observers;
 	private static ReadWriteLock temperatureLock = new ReentrantReadWriteLock();
 
 	public Client(int roomNumber) {
 		this.roomNumber = roomNumber;
 		mode = Mode.COOL;
 		state = State.STANDBY;
-		temperature = 27;
-		goalTemperature = 27;
+		temperature = 25;
+		goalTemperature = 25;
 		wind = Wind.MEDIUM;
 		fee = 0;
 		consumption = 0;
-		observers = new ArrayList<Observer>();
 	}
 
 	public int getRoomNumber() {
@@ -69,24 +66,20 @@ public class Client implements Subject {
 
 	public void setRoomNumber(int roomNumber) {
 		this.roomNumber = roomNumber;
-		this.notifyObservers();
 	}
 
 	public void setMode(Mode mode) {
 		this.mode = mode;
-		this.notifyObservers();
 	}
 
 	public void setState(State state) {
 		this.state = state;
-		this.notifyObservers();
 	}
 
 	public void setTemperature(double temperature) {
 		try {
 			temperatureLock.writeLock().lock();
 			this.temperature = temperature;
-			this.notifyObservers();
 		} finally {
 			temperatureLock.writeLock().unlock();
 		}
@@ -98,31 +91,14 @@ public class Client implements Subject {
 
 	public void setWind(Wind wind) {
 		this.wind = wind;
-		this.notifyObservers();
 	}
 
 	public void setFee(double fee) {
 		this.fee = fee;
-		this.notifyObservers();
 	}
 
 	public void setConsumption(double consumption) {
 		this.consumption = consumption;
-		this.notifyObservers();
-	}
-
-	public void registerObserver(Observer observer) {
-		observers.add(observer);
-	}
-
-	public void removeObserver(Observer observer) {
-		observers.remove(observer);
-	}
-
-	public void notifyObservers() {
-		for (Observer o : observers) {
-			o.update(this);
-		}
 	}
 
 }

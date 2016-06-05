@@ -1,7 +1,6 @@
 package application;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -12,7 +11,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.text.*;
 import javafx.stage.Stage;
 
-public class Main extends Application implements Observer {
+public class Main extends Application {
 	private int roomNum;
 	private Label runningState;
 	private Label currentTemperature;
@@ -20,6 +19,7 @@ public class Main extends Application implements Observer {
 	private Label currentTurboSpeed;
 	private Label currentCost;
 	private Label currentEnergyConsumption;
+	private Spinner<Integer> userTemperature;
 	private Controller defaultController;
 
 	@Override
@@ -59,17 +59,17 @@ public class Main extends Application implements Observer {
 		grid.add(hbBtn, 1, 4);
 
 		final Text actiontarget = new Text();
-		grid.add(actiontarget, 1, 6,2,1);
+		grid.add(actiontarget, 1, 6, 2, 1);
 		actiontarget.setId("actiontarget");
 
 		btn.setOnAction((ActionEvent e) -> {
 			try {
 				roomNum = Integer.parseInt(userTextField.getText());
-				defaultController=Controller.getInstance(roomNum);
+				defaultController = Controller.getInstance(roomNum);
 				if (defaultController.getState() == 1)
 					mainScene(thisStage);
 				else
-					actiontarget.setText("连接主控机失败，请与鹏辉联系");
+					actiontarget.setText("连接主控机失败，请与管理员联系");
 			} catch (Exception e1) {
 				actiontarget.setText("请输入正确的房间号");
 			}
@@ -84,14 +84,13 @@ public class Main extends Application implements Observer {
 	}
 
 	public void mainScene(Stage thisStage) {
-		defaultController.registerObserver(this);
 		GridPane grid = new GridPane();
 		grid.setAlignment(Pos.CENTER);
 		grid.setHgap(10);
 		grid.setVgap(10);
 		grid.setPadding(new Insets(100, 100, 100, 100));
 
-		Text scenetitle = new Text("鹏辉空调遥控");
+		Text scenetitle = new Text("空调遥控");
 		grid.add(scenetitle, 0, 0, 2, 1);
 		scenetitle.setId("welcome-text");
 
@@ -122,7 +121,7 @@ public class Main extends Application implements Observer {
 		Label label1 = new Label("目标温度:");
 		grid.add(label1, 0, 6, 2, 1);
 
-		TextField userTemperature = new TextField();
+		userTemperature = new Spinner<Integer>(18, 25, 25);
 		grid.add(userTemperature, 2, 6, 4, 1);
 
 		Label label2 = new Label("目标风速:");
@@ -144,16 +143,22 @@ public class Main extends Application implements Observer {
 
 		btn.setOnAction((ActionEvent e) -> {
 			try {
-				double temp1 = Double.parseDouble(userTemperature.getText());
+				double temp1 = userTemperature.getValue();
 				if (userTurboSpeed.getValue().equals("低速风")) {
 					if (!defaultController.sendDesiredTemperatureAndWind(temp1, Wind.LOW))
-						actiontarget.setText("连接主控机失败，请与鹏辉联系");
+						actiontarget.setText("连接主控机失败，请与管理员联系");
+					else
+						actiontarget.setText("");
 				} else if (userTurboSpeed.getValue().equals("中速风")) {
 					if (!defaultController.sendDesiredTemperatureAndWind(temp1, Wind.MEDIUM))
-						actiontarget.setText("连接主控机失败，请与鹏辉联系");
+						actiontarget.setText("连接主控机失败，请与管理员联系");
+					else
+						actiontarget.setText("");
 				} else if (userTurboSpeed.getValue().equals("高速风")) {
 					if (!defaultController.sendDesiredTemperatureAndWind(temp1, Wind.HIGH))
-						actiontarget.setText("连接主控机失败，请与鹏辉联系");
+						actiontarget.setText("连接主控机失败，请与管理员联系");
+					else
+						actiontarget.setText("");
 				} else
 					actiontarget.setText("请选择风速");
 			} catch (Exception e1) {
@@ -161,12 +166,13 @@ public class Main extends Application implements Observer {
 			}
 		});
 
-		Scene scene = new Scene(grid, 550, 400);
+		Scene scene = new Scene(grid, 650, 500);
 
 		thisStage.setTitle("主界面");
 		thisStage.setScene(scene);
 		scene.getStylesheets().add(Main.class.getResource("application.css").toExternalForm());
 		thisStage.show();
+		defaultController.registerObserver(this);
 	}
 
 	public void update(Client client) {
@@ -177,12 +183,17 @@ public class Main extends Application implements Observer {
 		else
 			runningState.setText("运行状态:待机中");
 
-		currentTemperature.setText("当前温度:" + Double.toString(round(client.getTemperature(),2)));
+		currentTemperature.setText("当前温度:" + Double.toString(round(client.getTemperature(), 2)));
 
-		if (client.getMode() == Mode.COOL)
+		if (client.getMode() == Mode.COOL) {
 			runningMode.setText("工作模式:制冷");
-		else
+			if (!runningMode.getText().equals("工作模式:制冷"))
+			userTemperature.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(18, 25));
+		} else {
 			runningMode.setText("工作模式:制热");
+			if (!runningMode.getText().equals("工作模式:制热"))
+			userTemperature.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(25, 30));
+		}
 
 		if (client.getWind() == Wind.LOW)
 			currentTurboSpeed.setText("当前风速:低速");
@@ -193,14 +204,16 @@ public class Main extends Application implements Observer {
 
 		currentCost.setText("费用:" + Double.toString(client.getFee()));
 
-		currentEnergyConsumption.setText("能耗:" + Double.toString(client.getConsumption()));
+		currentEnergyConsumption.setText("能耗:" + Double.toString(round(client.getConsumption(), 1)));
 	}
-	public static double round(double value, int places) {
-	    if (places < 0) throw new IllegalArgumentException();
 
-	    long factor = (long) Math.pow(10, places);
-	    value = value * factor;
-	    long tmp = Math.round(value);
-	    return (double) tmp / factor;
+	public static double round(double value, int places) {
+		if (places < 0)
+			throw new IllegalArgumentException();
+
+		long factor = (long) Math.pow(10, places);
+		value = value * factor;
+		long tmp = Math.round(value);
+		return (double) tmp / factor;
 	}
 }

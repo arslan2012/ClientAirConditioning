@@ -137,10 +137,8 @@ public class SocketConnection{
 			/*主机送停风信息*/
 			case 7:
 				in.hasNext();
-				int preemption = in.nextInt();//待修改
-				if (preemption==0)
-				client.setState(State.WAITING);
-				else client.setState(State.STANDBY);
+				in.nextInt();//待修改
+				client.setState(State.STANDBY);
 				break;
 				
 			/*请求获取温度*/
