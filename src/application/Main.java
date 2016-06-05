@@ -81,6 +81,7 @@ public class Main extends Application implements Observer{
         thisStage.show();
     }
     public void mainScene(Stage thisStage){
+    	Controller.getInstance(0).registerObserver(this);
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);

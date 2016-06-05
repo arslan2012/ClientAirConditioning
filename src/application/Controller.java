@@ -34,6 +34,10 @@ public class Controller{
 	public void decode() {
 		socketConn.decode(defaultClient);
 	}
+	public void registerObserver(Observer observer)
+    {
+		socketConn.registerObserver(observer);
+    }
 	public int getState() {
 		return state;
 	}
