@@ -12,10 +12,12 @@ public class SocketConnection{
 	private Socket socket;
 	private Scanner in;
 	private PrintWriter out;
+	private double tmpTemperature;
+	private Wind tmpWind;
 	
 	public boolean createConnection() {
 		try {
-			socket = new Socket("127.0.0.1", 8189);
+			socket = new Socket("127.0.0.1", 20000);
 			
 			InputStream inStream = socket.getInputStream();
 			in = new Scanner(inStream);
@@ -49,6 +51,7 @@ public class SocketConnection{
 		try {
 			out.println("1 "
 					+ Integer.toString(roomNumber) + " ");
+			out.flush();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -61,6 +64,9 @@ public class SocketConnection{
 		try {
 			out.println("3 "
 					+ Double.toString(temperature) + " "+Integer.toString(wind.getValue())+" ");
+			out.flush();
+			this.tmpTemperature=temperature;
+			this.tmpWind=wind;
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -72,6 +78,7 @@ public class SocketConnection{
 	public boolean sendStopWind() {
 		try {
 			out.println("5 ");
+			out.flush();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -84,6 +91,7 @@ public class SocketConnection{
 		try {
 			out.println("9 "
 					+ Double.toString(temperature) + " ");
+			out.flush();
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -112,8 +120,11 @@ public class SocketConnection{
 			case 4:
 				in.hasNext();
 				int isReasonable = in.nextInt();
-				if (isReasonable == 0) 
+				if (isReasonable == 0) {
 					client.setState(State.WAITING);
+					client.setGoalTemperature(tmpTemperature);
+					client.setWind(tmpWind);
+					}
 				else
 					client.setState(State.STANDBY);
 				break;

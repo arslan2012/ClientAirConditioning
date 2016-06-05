@@ -1,5 +1,7 @@
 package application;
 
+import javafx.application.Platform;
+
 public class getClientStats implements Runnable {
 	private Controller defaultController;
 
@@ -15,7 +17,7 @@ public class getClientStats implements Runnable {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} finally {
-				defaultController.decode();
+				Platform.runLater(() -> defaultController.decode());
 			}
 		}
 	}
