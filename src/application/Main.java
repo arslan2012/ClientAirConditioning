@@ -1,7 +1,9 @@
 package application;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -10,6 +12,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.*;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 
 public class Main extends Application {
 	private int roomNum;
@@ -19,8 +22,11 @@ public class Main extends Application {
 	private Label currentTurboSpeed;
 	private Label currentCost;
 	private Label currentEnergyConsumption;
-	private Spinner<Integer> userTemperature;
+	private Label sumCost;
+	private Label sumEnergyConsumption;
+	private Spinner<Double> userTemperature;
 	private Controller defaultController;
+	private Text actiontarget;
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -51,6 +57,22 @@ public class Main extends Application {
 
 		TextField userTextField = new TextField();
 		grid.add(userTextField, 1, 1);
+		
+		Button customIP = new Button("自定IP");
+		HBox hbcustomIP = new HBox(10);
+		hbcustomIP.setAlignment(Pos.BOTTOM_RIGHT);
+		hbcustomIP.getChildren().add(customIP);
+		grid.add(hbcustomIP, 0, 4);
+		
+		TextField IPField = new TextField();
+		IPField.setText("127.0.0.1");
+		IPField.setVisible(false);
+		grid.add(IPField, 0, 4);
+		
+		customIP.setOnAction((ActionEvent e) -> {
+			customIP.setVisible(false);
+			IPField.setVisible(true);
+		});
 
 		Button btn = new Button("登入");
 		HBox hbBtn = new HBox(10);
@@ -59,18 +81,19 @@ public class Main extends Application {
 		grid.add(hbBtn, 1, 4);
 
 		final Text actiontarget = new Text();
-		grid.add(actiontarget, 1, 6, 2, 1);
+		grid.add(actiontarget, 0, 6, 2, 1);
 		actiontarget.setId("actiontarget");
 
 		btn.setOnAction((ActionEvent e) -> {
 			try {
 				roomNum = Integer.parseInt(userTextField.getText());
-				defaultController = Controller.getInstance(roomNum);
+				defaultController = Controller.getInstance(roomNum,IPField.getText());
 				if (defaultController.getState() == 1)
 					mainScene(thisStage);
 				else
 					actiontarget.setText("连接主控机失败，请与管理员联系");
 			} catch (Exception e1) {
+				e1.printStackTrace();
 				actiontarget.setText("请输入正确的房间号");
 			}
 		});
@@ -103,16 +126,22 @@ public class Main extends Application {
 		currentTemperature = new Label("当前温度:     ");
 		grid.add(currentTemperature, 6, 1, 4, 1);
 
-		runningMode = new Label("工作模式:    ");
+		runningMode = new Label("工作模式:制冷");
 		grid.add(runningMode, 0, 2, 4, 1);
 
 		currentTurboSpeed = new Label("当前风速:    ");
 		grid.add(currentTurboSpeed, 6, 2, 2, 1);
+		
+		sumCost = new Label("总费用:");
+		grid.add(sumCost, 2, 3, 4, 1);
 
-		currentCost = new Label("费用:    ");
+		currentCost = new Label("当前费用:");
 		grid.add(currentCost, 6, 3, 2, 1);
 
-		currentEnergyConsumption = new Label("能耗:    ");
+		sumEnergyConsumption = new Label("总能耗:");
+		grid.add(sumEnergyConsumption, 2, 4, 4, 1);
+		
+		currentEnergyConsumption = new Label("当前能耗:");
 		grid.add(currentEnergyConsumption, 6, 4, 2, 1);
 
 		Label settings = new Label("设定:");
@@ -121,7 +150,7 @@ public class Main extends Application {
 		Label label1 = new Label("目标温度:");
 		grid.add(label1, 0, 6, 2, 1);
 
-		userTemperature = new Spinner<Integer>(18, 25, 25);
+		userTemperature = new Spinner<Double>(18, 25, 25,0.5);
 		grid.add(userTemperature, 2, 6, 4, 1);
 
 		Label label2 = new Label("目标风速:");
@@ -129,6 +158,7 @@ public class Main extends Application {
 
 		ComboBox<String> userTurboSpeed = new ComboBox<String>();
 		userTurboSpeed.getItems().addAll("低速风", "中速风", "高速风");
+		userTurboSpeed.setValue("中速风");
 		grid.add(userTurboSpeed, 2, 7, 4, 1);
 
 		Button btn = new Button("确定");
@@ -137,7 +167,7 @@ public class Main extends Application {
 		hbBtn.getChildren().add(btn);
 		grid.add(hbBtn, 5, 8);
 
-		final Text actiontarget = new Text();
+		actiontarget = new Text();
 		grid.add(actiontarget, 0, 8, 4, 1);
 		actiontarget.setId("actiontarget");
 
@@ -173,6 +203,14 @@ public class Main extends Application {
 		scene.getStylesheets().add(Main.class.getResource("application.css").toExternalForm());
 		thisStage.show();
 		defaultController.registerObserver(this);
+		thisStage.setOnCloseRequest(new EventHandler<WindowEvent>() {
+		    @Override
+		    public void handle(WindowEvent event) {
+		    	defaultController.closeConnection();
+		    	Platform.exit();
+		    	System.exit(0);
+		    }
+		});
 	}
 
 	public void update(Client client) {
@@ -185,15 +223,18 @@ public class Main extends Application {
 
 		currentTemperature.setText("当前温度:" + Double.toString(round(client.getTemperature(), 2)));
 
-		if (client.getMode() == Mode.COOL) {
+		if (client.getMode() == Mode.COOL){
+			if(runningMode.getText().equals("工作模式:制热")){
+				userTemperature.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(18,25,25,0.5));
+			}
 			runningMode.setText("工作模式:制冷");
-			if (!runningMode.getText().equals("工作模式:制冷"))
-			userTemperature.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(18, 25));
-		} else {
+			}
+		else{
+			if(runningMode.getText().equals("工作模式:制冷")){
+				userTemperature.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(25,30,25,0.5));
+			}
 			runningMode.setText("工作模式:制热");
-			if (!runningMode.getText().equals("工作模式:制热"))
-			userTemperature.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(25, 30));
-		}
+			}
 
 		if (client.getWind() == Wind.LOW)
 			currentTurboSpeed.setText("当前风速:低速");
@@ -202,9 +243,15 @@ public class Main extends Application {
 		else
 			currentTurboSpeed.setText("当前风速:高速");
 
-		currentCost.setText("费用:" + Double.toString(client.getFee()));
+		sumCost.setText("总费用:" + Double.toString(round(client.getSumFee(),1)));
 
-		currentEnergyConsumption.setText("能耗:" + Double.toString(round(client.getConsumption(), 1)));
+		sumEnergyConsumption.setText("总能耗:" + Double.toString(round(client.getSumConsumption(), 1)));
+		
+		currentCost.setText("当前费用:" + Double.toString(round(client.getFee(),1)));
+
+		currentEnergyConsumption.setText("当前能耗:" + Double.toString(round(client.getConsumption(), 1)));
+		if (!client.getPower()) actiontarget.setText("主控机可能掉线！");
+		else if (actiontarget.getText().equals("主控机可能掉线！")) actiontarget.setText("");
 	}
 
 	public static double round(double value, int places) {

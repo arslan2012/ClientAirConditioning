@@ -4,6 +4,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Client{
+	private boolean power;
 	private int roomNumber;
 	private Mode mode;
 	private State state;
@@ -12,7 +13,11 @@ public class Client{
 	private Wind wind;
 	private double fee;
 	private double consumption;
+	private double sumFee;
+	private double sumConsumption;
 	private static ReadWriteLock temperatureLock = new ReentrantReadWriteLock();
+	private static ReadWriteLock goalTemperatureLock = new ReentrantReadWriteLock();
+	private static ReadWriteLock powerLock = new ReentrantReadWriteLock();
 
 	public Client(int roomNumber) {
 		this.roomNumber = roomNumber;
@@ -23,6 +28,8 @@ public class Client{
 		wind = Wind.MEDIUM;
 		fee = 0;
 		consumption = 0;
+		sumFee = 0;
+		sumConsumption = 0;
 	}
 
 	public int getRoomNumber() {
@@ -49,7 +56,25 @@ public class Client{
 	}
 
 	public double getGoalTemperature() {
-		return goalTemperature;
+		double tmp = -1;
+		try {
+			goalTemperatureLock.readLock().lock();
+			tmp = goalTemperature;
+		} finally {
+			goalTemperatureLock.readLock().unlock();
+		}
+		return tmp;
+	}
+	
+	public boolean getPower() {
+		boolean tmp = true;
+		try {
+			powerLock.readLock().lock();
+			tmp = power;
+		} finally {
+			powerLock.readLock().unlock();
+		}
+		return tmp;
 	}
 
 	public Wind getWind() {
@@ -86,7 +111,21 @@ public class Client{
 	}
 
 	public void setGoalTemperature(double goalTemperature) {
-		this.goalTemperature = goalTemperature;
+		try {
+			goalTemperatureLock.writeLock().lock();
+			this.goalTemperature = goalTemperature;
+		} finally {
+			goalTemperatureLock.writeLock().unlock();
+		}
+	}
+	
+	public void setPower(boolean power) {
+		try {
+			powerLock.writeLock().lock();
+			this.power = power;
+		} finally {
+			powerLock.writeLock().unlock();
+		}
 	}
 
 	public void setWind(Wind wind) {
@@ -99,6 +138,22 @@ public class Client{
 
 	public void setConsumption(double consumption) {
 		this.consumption = consumption;
+	}
+
+	public double getSumFee() {
+		return sumFee;
+	}
+
+	public void setSumFee(double sumFee) {
+		this.sumFee = sumFee;
+	}
+
+	public double getSumConsumption() {
+		return sumConsumption;
+	}
+
+	public void setSumConsumption(double sumConsumption) {
+		this.sumConsumption = sumConsumption;
 	}
 
 }
