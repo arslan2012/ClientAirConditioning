@@ -15,10 +15,12 @@ public class SocketConnection{
 	private double tmpTemperature;
 	private Wind tmpWind;
 	
-	public boolean createConnection() {
+	public boolean createConnection(String IP) {
 		try {
-			socket = new Socket("127.0.0.1", 20000);
-			
+			String tmpIP;
+			if (IP.equals("")) tmpIP="127.0.0.1";
+			else tmpIP=IP;
+				socket = new Socket(tmpIP, 6666);
 			InputStream inStream = socket.getInputStream();
 			in = new Scanner(inStream);
 			OutputStream outStream = socket.getOutputStream();
@@ -60,13 +62,14 @@ public class SocketConnection{
 		return true;
 	}
 	
-	public boolean sendDesiredTemperatureAndWind(double temperature, Wind wind) {
+	public synchronized boolean sendDesiredTemperatureAndWind(double temperature, Wind wind) {
 		try {
 			out.println("3 "
 					+ Double.toString(temperature) + " "+Integer.toString(wind.getValue())+" ");
 			out.flush();
 			this.tmpTemperature=temperature;
 			this.tmpWind=wind;
+			System.out.println("sent"+temperature);
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -79,6 +82,7 @@ public class SocketConnection{
 		try {
 			out.println("5 ");
 			out.flush();
+			System.out.println("stop");
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -103,9 +107,8 @@ public class SocketConnection{
 	public void decode(Client client) {
 		if (in.hasNext()) {
 			int infoNumber = in.nextInt();
-			
+			client.setPower(true);
 			switch (infoNumber) {
-			
 			/*上线后主机返回信息*/
 			case 2:
 				in.hasNext();
@@ -139,6 +142,10 @@ public class SocketConnection{
 				in.hasNext();
 				in.nextInt();//待修改
 				client.setState(State.STANDBY);
+				client.setSumConsumption(client.getConsumption()+client.getSumConsumption());
+				client.setSumFee(client.getFee()+client.getSumFee());
+				client.setFee(0);
+				client.setConsumption(0);
 				break;
 				
 			/*请求获取温度*/
@@ -153,13 +160,13 @@ public class SocketConnection{
 				in.hasNext();
 				double fee = in.nextDouble();
 				
-				client.setConsumption(consumption + client.getConsumption());
-				client.setFee(fee + client.getFee());
+				client.setConsumption(consumption);
+				client.setFee(fee);
 				break;
 			default:
 				break;
 			}
-		}
+		}else client.setPower(false);
 	}
 	
 	public boolean closeConnection() {

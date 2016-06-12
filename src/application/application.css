@@ -1,30 +1,46 @@
 .root {
      -fx-background-image: url("/background.jpg");
+     -fx-font-family: "Microsoft YaHei";
+}
+.grid-panel{
+	-fx-background-color: white ;
 }
 .label {
-    -fx-font-size: 12px;
+    -fx-font-size: 15.0px;
     -fx-font-weight: bold;
-    -fx-text-fill: #333333;
-    -fx-effect: dropshadow( gaussian , rgba(255,255,255,0.5) , 0,0,0,1 );
+    -fx-text-fill: #000000;
+    -fx-effect: dropshadow( gaussian , rgba(255.0,255.0,255.0,0.5) , 0.0,0.0,0.0,1.0 );
 }
 #welcome-text {
-   -fx-font-size: 32px;
-   -fx-font-family: "Arial Black";
+   -fx-font-size: 32.0px;
    -fx-fill: #818181;
-   -fx-effect: innershadow( three-pass-box , rgba(0,0,0,0.7) , 6, 0.0 , 0 , 2 );
+   -fx-effect: innershadow( three-pass-box , rgba(0.0,0.0,0.0,0.7) , 6.0, 0.0 , 0.0 , 2.0 );
 }
 #actiontarget {
   -fx-fill: FIREBRICK;
   -fx-font-weight: bold;
-  -fx-effect: dropshadow( gaussian , rgba(255,255,255,0.5) , 0,0,0,1 );  
+  -fx-effect: dropshadow( gaussian , rgba(255.0,255.0,255.0,0.5) , 0.0,0.0,0.0,1.0 );  
+}
+#hbox {
+	-fx-border-color: blue;
+	-fx-border-insets: 5.0;
+	-fx-border-width: 3.0;
+	-fx-border-style: dashed;
 }
 .button {
-    -fx-text-fill: white;
-    -fx-font-family: "Arial Narrow";
+    -fx-background-color: 
+        linear-gradient(#ffd65b, #e68400),
+        linear-gradient(#ffef84, #f2ba44),
+        linear-gradient(#ffea6a, #efaa22),
+        linear-gradient(#ffe657 0.0%, #f8c202 50.0%, #eea10b 100.0%),
+        linear-gradient(from 0.0% 0.0% to 15.0% 50.0%, rgba(255.0,255.0,255.0,0.9), rgba(255.0,255.0,255.0,0.0));
+    -fx-background-radius: 30.0;
+    -fx-background-insets: 0.0,1.0,2.0,3.0,0.0;
+    -fx-text-fill: #654b00;
     -fx-font-weight: bold;
-    -fx-background-color: linear-gradient(#61a2b1, #2A5058);
-    -fx-effect: dropshadow( three-pass-box , rgba(0,0,0,0.6) , 5, 0.0 , 0 , 1 );
+    -fx-font-size: 14.0px;
+    -fx-padding: 10.0 20.0 10.0 20.0;
 }
 .button:hover {
-    -fx-background-color: linear-gradient(#2A5058, #61a2b1);
+        -fx-background-color: #eea10b;
 }

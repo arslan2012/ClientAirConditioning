@@ -8,8 +8,8 @@ public class Controller {
 	private Client defaultClient;
 	private int state;
 
-	private Controller(int roomNumber) {
-		if (initClient(roomNumber)) {
+	private Controller(int roomNumber,String IP) {
+		if (initClient(roomNumber,IP)) {
 			new Thread(() -> {
 				while (true) {
 					this.decode();
@@ -43,15 +43,15 @@ public class Controller {
 		}).start();
 	}
 
-	public static synchronized Controller getInstance(int roomNumber) {
+	public static synchronized Controller getInstance(int roomNumber,String IP) {
 		if (instance == null)
-			instance = new Controller(roomNumber);
+			instance = new Controller(roomNumber,IP);
 		return instance;
 	}
 
-	public boolean initClient(int roomNumber) {
+	public boolean initClient(int roomNumber,String IP) {
 		socketConn = new SocketConnection();
-		if (socketConn.createConnection() && socketConn.sendStartUp(roomNumber)) {
+		if (socketConn.createConnection(IP) && socketConn.sendStartUp(roomNumber)) {
 			defaultClient = new Client(roomNumber);
 			return true;
 		} else
@@ -59,21 +59,26 @@ public class Controller {
 	}
 
 	public boolean sendDesiredTemperatureAndWind(double temperature, Wind wind) {
-		boolean tmp = socketConn.sendDesiredTemperatureAndWind(temperature, wind);
-		if (temperature > defaultClient.getTemperature())
-			socketConn.sendStopWind();
-		return tmp;
-	}
-
-	public boolean setDesiredTemperatureAndWind(double temperature, Wind wind) {
-		boolean tmp = socketConn.sendDesiredTemperatureAndWind(temperature, wind);
-		if (temperature > defaultClient.getTemperature())
-			socketConn.sendStopWind();
-		return tmp;
+		if ((temperature < defaultClient.getTemperature() && defaultClient.getMode()==Mode.COOL && temperature < 25)
+				||(temperature > defaultClient.getTemperature() && defaultClient.getMode()==Mode.HEAT && temperature >25)){
+			boolean tmp = socketConn.sendDesiredTemperatureAndWind(temperature, wind);
+//			defaultClient.setGoalTemperature(temperature);
+//			defaultClient.setWind(wind);
+			return tmp;
+			}
+		else {
+			boolean tmp = socketConn.sendStopWind();
+			defaultClient.setGoalTemperature(temperature);
+			defaultClient.setWind(wind);
+			return tmp;
+		}
 	}
 
 	public void decode() {
 		socketConn.decode(defaultClient);
+	}
+	public boolean closeConnection(){
+		return socketConn.closeConnection();
 	}
 
 	public int getState() {
@@ -81,26 +86,26 @@ public class Controller {
 	}
 
 	public void RoomTemperature() {
-		if (defaultClient.getState() == State.RUNNING) {
+		if (defaultClient.getState() == State.RUNNING  && defaultClient.getPower()) {
 			if (defaultClient.getMode() == Mode.COOL
 					&& defaultClient.getTemperature() > defaultClient.getGoalTemperature()
 					&& defaultClient.getGoalTemperature() < 25) {
 
 				if (defaultClient.getWind() == Wind.LOW) {
-					if (defaultClient.getTemperature() - 0.4 < defaultClient.getGoalTemperature())
+					if (defaultClient.getTemperature() - 0.2 < defaultClient.getGoalTemperature())
 						defaultClient.setTemperature(defaultClient.getGoalTemperature());
 					else
-						defaultClient.setTemperature(defaultClient.getTemperature() - 0.4);
+						defaultClient.setTemperature(defaultClient.getTemperature() - 0.2);
 				} else if (defaultClient.getWind() == Wind.MEDIUM) {
-					if (defaultClient.getTemperature() - 0.5 < defaultClient.getGoalTemperature())
+					if (defaultClient.getTemperature() - 0.25 < defaultClient.getGoalTemperature())
 						defaultClient.setTemperature(defaultClient.getGoalTemperature());
 					else
-						defaultClient.setTemperature(defaultClient.getTemperature() - 0.5);
+						defaultClient.setTemperature(defaultClient.getTemperature() - 0.25);
 				} else {
-					if (defaultClient.getTemperature() - 0.6 < defaultClient.getGoalTemperature())
+					if (defaultClient.getTemperature() - 0.3 < defaultClient.getGoalTemperature())
 						defaultClient.setTemperature(defaultClient.getGoalTemperature());
 					else
-						defaultClient.setTemperature(defaultClient.getTemperature() - 0.6);
+						defaultClient.setTemperature(defaultClient.getTemperature() - 0.3);
 				}
 
 			} else if (defaultClient.getMode() == Mode.HEAT
@@ -108,20 +113,20 @@ public class Controller {
 					&& defaultClient.getGoalTemperature() > 25) {
 
 				if (defaultClient.getWind() == Wind.LOW) {
-					if (defaultClient.getTemperature() + 0.4 > defaultClient.getGoalTemperature())
+					if (defaultClient.getTemperature() + 0.2 > defaultClient.getGoalTemperature())
 						defaultClient.setTemperature(defaultClient.getGoalTemperature());
 					else
-						defaultClient.setTemperature(defaultClient.getTemperature() + 0.4);
+						defaultClient.setTemperature(defaultClient.getTemperature() + 0.2);
 				} else if (defaultClient.getWind() == Wind.MEDIUM) {
-					if (defaultClient.getTemperature() + 0.5 < defaultClient.getGoalTemperature())
+					if (defaultClient.getTemperature() + 0.25 > defaultClient.getGoalTemperature())
 						defaultClient.setTemperature(defaultClient.getGoalTemperature());
 					else
-						defaultClient.setTemperature(defaultClient.getTemperature() + 0.5);
+						defaultClient.setTemperature(defaultClient.getTemperature() + 0.25);
 				} else {
-					if (defaultClient.getTemperature() + 0.6 < defaultClient.getGoalTemperature())
+					if (defaultClient.getTemperature() + 0.3 > defaultClient.getGoalTemperature())
 						defaultClient.setTemperature(defaultClient.getGoalTemperature());
 					else
-						defaultClient.setTemperature(defaultClient.getTemperature() + 0.6);
+						defaultClient.setTemperature(defaultClient.getTemperature() + 0.3);
 				}
 			}
 			if (defaultClient.getMode() == Mode.COOL
@@ -141,9 +146,11 @@ public class Controller {
 							&& defaultClient.getTemperature() < defaultClient.getGoalTemperature()
 							&& defaultClient.getGoalTemperature() > 25))
 				socketConn.sendDesiredTemperatureAndWind(defaultClient.getGoalTemperature(), defaultClient.getWind());
-			if (defaultClient.getTemperature() > 25) {
+			if (defaultClient.getTemperature() <= 25.1 && defaultClient.getTemperature() >= 24.9){
+				defaultClient.setTemperature(25.0);
+			}else if (defaultClient.getTemperature() > 25.1) {
 				defaultClient.setTemperature(defaultClient.getTemperature() - 0.1);
-			} else if (defaultClient.getTemperature() < 25) {
+			} else if (defaultClient.getTemperature() < 24.9) {
 				defaultClient.setTemperature(defaultClient.getTemperature() + 0.1);
 			}
 		}
