@@ -5,19 +5,23 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Client{
 	private boolean power;
+	private static ReadWriteLock powerLock = new ReentrantReadWriteLock();
 	private int roomNumber;
 	private Mode mode;
 	private State state;
 	private double temperature;
+	private static ReadWriteLock temperatureLock = new ReentrantReadWriteLock();
 	private double goalTemperature;
+	private static ReadWriteLock goalTemperatureLock = new ReentrantReadWriteLock();
 	private Wind wind;
 	private double fee;
+	private static ReadWriteLock feeLock = new ReentrantReadWriteLock();
 	private double consumption;
+	private static ReadWriteLock consumptionLock = new ReentrantReadWriteLock();
 	private double sumFee;
+	private static ReadWriteLock sumFeeLock = new ReentrantReadWriteLock();
 	private double sumConsumption;
-	private static ReadWriteLock temperatureLock = new ReentrantReadWriteLock();
-	private static ReadWriteLock goalTemperatureLock = new ReentrantReadWriteLock();
-	private static ReadWriteLock powerLock = new ReentrantReadWriteLock();
+	private static ReadWriteLock sumConsumptionLock = new ReentrantReadWriteLock();
 
 	public Client(int roomNumber) {
 		this.roomNumber = roomNumber;
@@ -82,11 +86,47 @@ public class Client{
 	}
 
 	public double getFee() {
-		return fee;
+		double tmp;
+		try {
+			feeLock.readLock().lock();
+			tmp = fee;
+		} finally {
+			feeLock.readLock().unlock();
+		}
+		return tmp;
 	}
 
 	public double getConsumption() {
-		return consumption;
+		double tmp;
+		try {
+			consumptionLock.readLock().lock();
+			tmp = consumption;
+		} finally {
+			consumptionLock.readLock().unlock();
+		}
+		return tmp;
+	}
+	
+	public double getSumFee() {
+		double tmp;
+		try {
+			sumFeeLock.readLock().lock();
+			tmp = sumFee;
+		} finally {
+			sumFeeLock.readLock().unlock();
+		}
+		return tmp;
+	}
+	
+	public double getSumConsumption() {
+		double tmp;
+		try {
+			sumConsumptionLock.readLock().lock();
+			tmp = sumConsumption;
+		} finally {
+			sumConsumptionLock.readLock().unlock();
+		}
+		return tmp;
 	}
 
 	public void setRoomNumber(int roomNumber) {
@@ -133,27 +173,39 @@ public class Client{
 	}
 
 	public void setFee(double fee) {
-		this.fee = fee;
+		try {
+			feeLock.writeLock().lock();
+			this.fee = fee;
+		} finally {
+			feeLock.writeLock().unlock();
+		}
 	}
 
 	public void setConsumption(double consumption) {
-		this.consumption = consumption;
-	}
-
-	public double getSumFee() {
-		return sumFee;
+		try {
+			consumptionLock.writeLock().lock();
+			this.consumption = consumption;
+		} finally {
+			consumptionLock.writeLock().unlock();
+		}
 	}
 
 	public void setSumFee(double sumFee) {
-		this.sumFee = sumFee;
-	}
-
-	public double getSumConsumption() {
-		return sumConsumption;
+		try {
+			sumFeeLock.writeLock().lock();
+			this.sumFee = sumFee;
+		} finally {
+			sumFeeLock.writeLock().unlock();
+		}
 	}
 
 	public void setSumConsumption(double sumConsumption) {
-		this.sumConsumption = sumConsumption;
+		try {
+			sumConsumptionLock.writeLock().lock();
+			this.sumConsumption = sumConsumption;
+		} finally {
+			sumConsumptionLock.writeLock().unlock();
+		}
 	}
 
 }

@@ -8,8 +8,8 @@ public class Controller {
 	private Client defaultClient;
 	private int state;
 
-	private Controller(int roomNumber,String IP) {
-		if (initClient(roomNumber,IP)) {
+	private Controller(int roomNumber,String IP,int port) {
+		if (initClient(roomNumber,IP,port)) {
 			new Thread(() -> {
 				while (true) {
 					this.decode();
@@ -43,15 +43,15 @@ public class Controller {
 		}).start();
 	}
 
-	public static synchronized Controller getInstance(int roomNumber,String IP) {
+	public static synchronized Controller getInstance(int roomNumber,String IP,int port) {
 		if (instance == null)
-			instance = new Controller(roomNumber,IP);
+			instance = new Controller(roomNumber,IP,port);
 		return instance;
 	}
 
-	public boolean initClient(int roomNumber,String IP) {
+	public boolean initClient(int roomNumber,String IP,int port) {
 		socketConn = new SocketConnection();
-		if (socketConn.createConnection(IP) && socketConn.sendStartUp(roomNumber)) {
+		if (socketConn.createConnection(IP,port) && socketConn.sendStartUp(roomNumber)) {
 			defaultClient = new Client(roomNumber);
 			return true;
 		} else

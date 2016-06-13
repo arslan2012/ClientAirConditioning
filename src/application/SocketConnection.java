@@ -15,12 +15,9 @@ public class SocketConnection{
 	private double tmpTemperature;
 	private Wind tmpWind;
 	
-	public boolean createConnection(String IP) {
+	public boolean createConnection(String IP,int port) {
 		try {
-			String tmpIP;
-			if (IP.equals("")) tmpIP="127.0.0.1";
-			else tmpIP=IP;
-				socket = new Socket(tmpIP, 6666);
+			socket = new Socket(IP, port);
 			InputStream inStream = socket.getInputStream();
 			in = new Scanner(inStream);
 			OutputStream outStream = socket.getOutputStream();

@@ -47,48 +47,56 @@ public class Main extends Application {
 		grid.setAlignment(Pos.CENTER);
 		grid.setHgap(10);
 		grid.setVgap(10);
-		grid.setPadding(new Insets(25, 25, 25, 25));
+		grid.setPadding(new Insets(40));
 
 		Text scenetitle = new Text("欢迎使用");
 		grid.add(scenetitle, 0, 0, 2, 1);
 		scenetitle.setId("welcome-text");
 
 		Label userName = new Label("房间号:");
-		grid.add(userName, 0, 1);
+		grid.add(userName, 0, 1, 1, 1);
 
 		TextField userTextField = new TextField();
-		grid.add(userTextField, 1, 1);
+		grid.add(userTextField, 1, 1,9,1);
 		
 		Button customIP = new Button("自定IP");
 		HBox hbcustomIP = new HBox(10);
 		hbcustomIP.setAlignment(Pos.BOTTOM_RIGHT);
 		hbcustomIP.getChildren().add(customIP);
-		grid.add(hbcustomIP, 0, 4);
+		grid.add(hbcustomIP, 0, 2, 2, 1);
 		
 		TextField IPField = new TextField();
 		IPField.setText("127.0.0.1");
 		IPField.setVisible(false);
-		grid.add(IPField, 0, 4);
+		grid.add(IPField, 0, 2, 1, 1);
+		
+		TextField portField = new TextField();
+		portField.setText("6666");
+		portField.setVisible(false);
+		grid.add(portField, 1, 2, 1, 1);
 		
 		customIP.setOnAction((ActionEvent e) -> {
 			customIP.setVisible(false);
 			IPField.setVisible(true);
+			portField.setVisible(true);
 		});
 
 		Button btn = new Button("登入");
 		HBox hbBtn = new HBox(10);
 		hbBtn.setAlignment(Pos.BOTTOM_RIGHT);
 		hbBtn.getChildren().add(btn);
-		grid.add(hbBtn, 1, 4);
+		grid.add(hbBtn, 2, 2, 8, 1);
 
 		final Text actiontarget = new Text();
-		grid.add(actiontarget, 0, 6, 2, 1);
+		grid.add(actiontarget, 0, 3, 2, 1);
 		actiontarget.setId("actiontarget");
 
 		btn.setOnAction((ActionEvent e) -> {
 			try {
 				roomNum = Integer.parseInt(userTextField.getText());
-				defaultController = Controller.getInstance(roomNum,IPField.getText());
+				if (IPField.getText().equals("")) IPField.setText("127.0.0.1");
+				if (portField.getText().equals("")) portField.setText("6666");
+				defaultController = Controller.getInstance(roomNum,IPField.getText(),Integer.parseInt(portField.getText()));
 				if (defaultController.getState() == 1)
 					mainScene(thisStage);
 				else
